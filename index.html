@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escape Espacial!</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: radial-gradient(ellipse at center, #1a1a3a 0%, #000011 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow: hidden;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      position: relative;
+    }
+
+    /* Estrelas de fundo */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+        radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+        radial-gradient(2px 2px at 160px 30px, rgba(255,255,255,0.9), transparent);
+      background-repeat: repeat;
+      background-size: 200px 100px;
+      animation: starfield 20s linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @keyframes starfield {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(100px); }
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      z-index: 2;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 20px rgba(0, 200, 255, 0.5); }
+      to { text-shadow: 0 0 30px rgba(0, 200, 255, 1); }
+    }
+
+    #game {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      min-height: 400px;
+      max-height: 600px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, #000428 0%, #004e92 100%);
+      border: 3px solid #00c3ff;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 
+        0 0 30px rgba(0, 195, 255, 0.5),
+        inset 0 0 50px rgba(0, 0, 100, 0.3);
+    }
+
+    .player {
+      width: 50px;
+      height: 60px;
+      position: absolute;
+      transition: all 0.1s ease;
+    }
+
+    /* Espaçonave futurística */
+    .player::before {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 25px solid transparent;
+      border-right: 25px solid transparent;
+      border-bottom: 45px solid #00ffff;
+      top: 0;
+      left: 0;
+      filter: drop-shadow(0 0 15px rgba(0, 255, 255, 1))
+             drop-shadow(0 0 25px rgba(0, 200, 255, 0.8));
+      z-index: 2;
+    }
+
+    /* Corpo da nave */
+    .player::after {
+      content: '';
+      position: absolute;
+      width: 30px;
+      height: 25px;
+      background: linear-gradient(135deg, #0099ff, #00ccff, #ffffff);
+      top: 35px;
+      left: 10px;
+      border-radius: 15px 15px 5px 5px;
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.8),
+        inset 0 2px 5px rgba(255, 255, 255, 0.3);
+      z-index: 1;
+    }
+
+    /* Motores da nave */
+    .player .engine-left,
+    .player .engine-right {
+      position: absolute;
+      width: 8px;
+      height: 20px;
+      background: linear-gradient(180deg, #ff4500, #ff6500, #ffaa00);
+      bottom: -15px;
+      border-radius: 4px 4px 50% 50%;
+      animation: engine-flame 0.2s ease-in-out infinite alternate;
+      filter: blur(1px);
+    }
+
+    .engine-left {
+      left: 12px;
+    }
+
+    .engine-right {
+      right: 12px;
+    }
+
+    @keyframes engine-flame {
+      0% { 
+        transform: scaleY(1);
+        opacity: 0.8;
+      }
+      100% { 
+        transform: scaleY(1.4);
+        opacity: 1;
+      }
+    }
+
+    .enemy {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      animation: asteroid-spin 4s linear infinite;
+    }
+
+    /* Asteroide rochoso realista */
+    .enemy::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 20%, #666, transparent 30%),
+        radial-gradient(circle at 60% 70%, #555, transparent 25%),
+        radial-gradient(circle at 80% 30%, #777, transparent 20%),
+        linear-gradient(135deg, #999, #666, #444);
+      border-radius: 45% 55% 60% 40% / 50% 65% 35% 50%;
+      box-shadow: 
+        inset -8px -8px 15px rgba(0, 0, 0, 0.7),
+        inset 5px 5px 10px rgba(200, 200, 200, 0.2),
+        0 0 20px rgba(0, 0, 0, 0.5);
+      border: 2px solid #333;
+    }
+
+    /* Crateras do asteroide */
+    .enemy::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: radial-gradient(circle, #222, #444);
+      border-radius: 50%;
+      top: 8px;
+      left: 15px;
+      box-shadow: 
+        12px 8px 0 -2px #333,
+        -5px 15px 0 -3px #222,
+        20px 20px 0 -4px #111;
+    }
+
+    @keyframes asteroid-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #score {
+      text-align: center;
+      margin-top: 20px;
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      font-weight: bold;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      z-index: 100;
+    }
+
+    .screen h2 {
+      font-size: clamp(1.8rem, 6vw, 3rem);
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+
+    .screen p {
+      font-size: clamp(0.9rem, 3vw, 1.2rem);
+      margin-bottom: 30px;
+      text-align: center;
+      line-height: 1.5;
+      opacity: 0.9;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #00c3ff, #0099cc);
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      font-size: clamp(1rem, 4vw, 1.2rem);
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 195, 255, 0.4);
+      margin: 10px;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 195, 255, 0.6);
+    }
+
+    .btn:active {
+      transform: translateY(-1px);
+    }
+
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .mobile-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 10px;
+      z-index: 50;
+    }
+
+    .control-btn {
+      background: rgba(0, 195, 255, 0.8);
+      border: 2px solid #00c3ff;
+      border-radius: 50%;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:active {
+      background: rgba(0, 195, 255, 1);
+      transform: scale(0.95);
+    }
+
+    .control-btn.up { grid-column: 2; grid-row: 1; }
+    .control-btn.left { grid-column: 1; grid-row: 2; }
+    .control-btn.down { grid-column: 2; grid-row: 2; }
+    .control-btn.right { grid-column: 3; grid-row: 2; }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+      }
+      
+      #game {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .mobile-controls {
+        bottom: 10px;
+      }
+      
+      .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-controls {
+        display: none;
+      }
+    }
+
+    .instructions {
+      font-size: clamp(0.8rem, 2.5vw, 1rem);
+      opacity: 0.8;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Escape Espacial!</h1>
+    
+    <div id="game">
+      <div class="player hidden" id="player">
+        <div class="engine-left"></div>
+        <div class="engine-right"></div>
+      </div>
+      
+      <!-- Tela de Início -->
+      <div class="screen" id="startScreen">
+        <h2>🌌 Missão Espacial!</h2>
+        <p>Pilote sua nave espacial através do campo de asteróides e sobreviva o máximo que conseguir!</p>
+        <button class="btn" id="startBtn">Iniciar Missão</button>
+        <div class="instructions">
+          <p>💻 PC: Use as setas do teclado</p>
+          <p>📱 Mobile: Use os botões na tela</p>
+        </div>
+      </div>
+      
+      <!-- Tela de Game Over -->
+      <div class="screen hidden" id="gameOverScreen">
+        <h2>🛸 Nave Destruída!</h2>
+        <p id="finalScore">Asteróides desviados: 0</p>
+        <button class="btn" id="restartBtn">Nova Missão</button>
+        <button class="btn" id="menuBtn">Base Espacial</button>
+      </div>
+    </div>
+
+    <div id="score">Asteróides Desviados: 0</div>
+    
+    <!-- Controles Mobile -->
+    <div class="mobile-controls hidden" id="mobileControls">
+      <button class="control-btn up" data-direction="up">↑</button>
+      <button class="control-btn left" data-direction="left">←</button>
+      <button class="control-btn down" data-direction="down">↓</button>
+      <button class="control-btn right" data-direction="right">→</button>
+    </div>
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const scoreEl = document.getElementById('score');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const mobileControls = document.getElementById('mobileControls');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const menuBtn = document.getElementById('menuBtn');
+    const finalScore = document.getElementById('finalScore');
+    
+    let gameState = 'start'; // 'start', 'playing', 'gameOver'
+    let playerX = 0;
+    let playerY = 0;
+    let score = 0;
+    let gameWidth = 0;
+    let gameHeight = 0;
+    let enemies = [];
+    let animationId = null;
+    let enemySpawnInterval = null;
+
+    // Inicialização
+    function init() {
+      updateGameDimensions();
+      resetPlayer();
+      
+      // Event listeners
+      startBtn.addEventListener('click', startGame);
+      restartBtn.addEventListener('click', startGame);
+      menuBtn.addEventListener('click', showStartScreen);
+      
+      // Controles do teclado
+      document.addEventListener('keydown', handleKeyPress);
+      
+      // Controles mobile
+      const controlBtns = document.querySelectorAll('.control-btn');
+      controlBtns.forEach(btn => {
+        btn.addEventListener('touchstart', handleMobileControl);
+        btn.addEventListener('mousedown', handleMobileControl);
+      });
+      
+      // Redimensionamento
+      window.addEventListener('resize', updateGameDimensions);
+    }
+
+    function updateGameDimensions() {
+      const gameRect = game.getBoundingClientRect();
+      gameWidth = game.offsetWidth;
+      gameHeight = game.offsetHeight;
+    }
+
+    function resetPlayer() {
+      playerX = Math.max(0, Math.floor((gameWidth - 50) / 2));
+      playerY = Math.max(0, gameHeight - 70);
+      updatePlayerPosition();
+    }
+
+    function updatePlayerPosition() {
+      player.style.left = playerX + 'px';
+      player.style.top = playerY + 'px';
+    }
+
+    function startGame() {
+      gameState = 'playing';
+      score = 0;
+      enemies = [];
+      
+      // Limpar inimigos existentes
+      const existingEnemies = game.querySelectorAll('.enemy');
+      existingEnemies.forEach(enemy => enemy.remove());
+      
+      // Mostrar elementos do jogo
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      player.classList.remove('hidden');
+      
+      // Mostrar controles mobile em dispositivos touch
+      if (window.innerWidth <= 768) {
+        mobileControls.classList.remove('hidden');
+      }
+      
+      updateGameDimensions();
+      resetPlayer();
+      updateScore();
+      
+      // Iniciar spawn de inimigos
+      enemySpawnInterval = setInterval(createEnemy, 800);
+      
+      // Iniciar loop do jogo
+      gameLoop();
+    }
+
+    function showStartScreen() {
+      gameState = 'start';
+      
+      // Parar o jogo
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      if (enemySpawnInterval) {
+        clearInterval(enemySpawnInterval);
+      }
+      
+      // Limpar inimigos
+      const existingEnemies = game.querySelectorAll('.enemy');
+      existingEnemies.forEach(enemy => enemy.remove());
+      
+      // Mostrar tela inicial
+      startScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('hidden');
+      player.classList.add('hidden');
+      mobileControls.classList.add('hidden');
+    }
+
+    function gameOver() {
+      gameState = 'gameOver';
+      
+      // Parar o jogo
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      if (enemySpawnInterval) {
+        clearInterval(enemySpawnInterval);
+      }
+      
+      // Mostrar tela de game over
+      finalScore.textContent = `Asteróides desviados: ${score}`;
+      gameOverScreen.classList.remove('hidden');
+      mobileControls.classList.add('hidden');
+    }
+
+    function handleKeyPress(e) {
+      if (gameState !== 'playing') return;
+      
+      const step = Math.max(15, Math.floor(gameWidth / 20));
+      
+      switch(e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          playerX = Math.max(0, playerX - step);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          playerX = Math.min(gameWidth - 50, playerX + step);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          playerY = Math.max(0, playerY - step);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          playerY = Math.min(gameHeight - 60, playerY + step);
+          break;
+      }
+      
+      updatePlayerPosition();
+    }
+
+    function handleMobileControl(e) {
+      if (gameState !== 'playing') return;
+      
+      e.preventDefault();
+      const direction = e.target.dataset.direction;
+      const step = Math.max(15, Math.floor(gameWidth / 20));
+      
+      switch(direction) {
+        case 'left':
+          playerX = Math.max(0, playerX - step);
+          break;
+        case 'right':
+          playerX = Math.min(gameWidth - 50, playerX + step);
+          break;
+        case 'up':
+          playerY = Math.max(0, playerY - step);
+          break;
+        case 'down':
+          playerY = Math.min(gameHeight - 60, playerY + step);
+          break;
+      }
+      
+      updatePlayerPosition();
+    }
+
+    function createEnemy() {
+      if (gameState !== 'playing') return;
+      
+      const enemy = document.createElement('div');
+      enemy.classList.add('enemy');
+      
+      const enemyX = Math.floor(Math.random() * (gameWidth - 40));
+      enemy.style.left = enemyX + 'px';
+      enemy.style.top = '0px';
+      
+      const speed = 2 + Math.random() * 3 + (score * 0.1);
+      enemy.dataset.speed = speed;
+      enemy.dataset.y = 0;
+      
+      game.appendChild(enemy);
+      enemies.push(enemy);
+    }
+
+    function updateEnemies() {
+      enemies.forEach((enemy, index) => {
+        let y = parseFloat(enemy.dataset.y);
+        const speed = parseFloat(enemy.dataset.speed);
+        
+        y += speed;
+        enemy.dataset.y = y;
+        enemy.style.top = y + 'px';
+        
+        // Remover inimigo se saiu da tela
+        if (y > gameHeight) {
+          enemy.remove();
+          enemies.splice(index, 1);
+          score++;
+          updateScore();
+          return;
+        }
+        
+        // Verificar colisão
+        if (checkCollision(enemy, player)) {
+          gameOver();
+          return;
+        }
+      });
+    }
+
+    function checkCollision(a, b) {
+      const aRect = a.getBoundingClientRect();
+      const bRect = b.getBoundingClientRect();
+      
+      return !(
+        aRect.bottom < bRect.top ||
+        aRect.top > bRect.bottom ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+      );
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `Asteróides Desviados: ${score}`;
+    }
+
+    function gameLoop() {
+      if (gameState !== 'playing') return;
+      
+      updateEnemies();
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // Inicializar o jogo
+    init();
+  </script>
+</body>
+</html>
